@@ -22,8 +22,12 @@ void enqueue(struct queue_t * q, struct pcb_t * proc) {
                 //Put the process in the correct position
                 int position = q->size - 1;
                 while (position > 0){
-                        if (q->proc[position]->priority > )
+                        if (q->proc[position]->priority > proc->priorit){
+                                q->proc[position+1] = q->proc[position];
+                        }
+                        position--;
                 }
+                q->proc[position++] = proc;
         }
 #endif
 }
@@ -49,7 +53,16 @@ struct pcb_t * dequeue(struct queue_t * q) {
                 return return_pcb;
         }
 #else
-
+        if (empty(q)) return NULL;
+        else{
+                return_pcb = q->proc[0]
+                for (int i =0 ; i < q->size; i++){
+                        q->proc[i] = q->proc[i+1];
+                }
+        }
+        q->size--;
+        return return_pcb;
+        
 #endif   
 	return NULL;
 }
