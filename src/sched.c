@@ -35,6 +35,12 @@ void init_scheduler(void) {
 	pthread_mutex_init(&queue_lock, NULL);
 }
 
+void reset_queue(){
+	for (int i = 0; i < MAX_PRIO; i++){
+		mlq_ready_queue[i]->time_slot = 0;
+	}
+}
+
 #ifdef MLQ_SCHED
 /* 
  *  Stateful design for routine calling
@@ -47,6 +53,44 @@ struct pcb_t * get_mlq_proc(void) {
 	/*TODO: get a process from PRIORITY [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 * */
+
+	//What to do
+	//Check if the queue is empty or not
+	//Loop through each priority queue
+	//If a queue is empty -> go to next queue
+	//Compute the slots of this queue
+	//If a queue is run out if slot -> go to next queue
+	//If all queue run out of slots -> reset
+	if (queue_empty()) return NULL;
+	struct queue_t* current_queue;
+
+
+	while (1){
+		int queue_max_slot;
+		//Loop through each priority queue
+		for (int i = 0; i < MAX_PRIO; i++){
+			current_queue = &mlq_ready_queue[i];
+			queue_max_slot = MAX_PRIO - i;
+			//Check if the current priority queue is empty or not
+			if (current_queue->size > 0){
+					//Check if it has run out of slots or not
+					if (current_queue->time_slot == queue_max_slot ) continue;
+					else{
+						//Get the process from the queue
+						pthread_mutex_lock(&queue_lock);
+						proc = dequeue(current_queue);
+						current_queue->time_slot++;
+						pthread_mutex_unlock(&queue_lock);
+						return proc;
+					}
+			}
+			else continue;
+		}
+		//All the queue are run out of slots and still not empty -> reset
+		if (!queue_empty()) reset_queue();
+	}
+
+
 	return proc;	
 }
 
