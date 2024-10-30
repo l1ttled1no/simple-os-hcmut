@@ -63,31 +63,36 @@ struct pcb_t * get_mlq_proc(void) {
 	//If all queue run out of slots -> reset
 	if (queue_empty()) return NULL;
 	struct queue_t* current_queue;
-
+	int queue_index = 0;
+	int queue_max_slot;
 
 	while (1){
-		int queue_max_slot;
 		//Loop through each priority queue
-		for (int i = 0; i < MAX_PRIO; i++){
-			current_queue = &mlq_ready_queue[i];
-			queue_max_slot = MAX_PRIO - i;
-			//Check if the current priority queue is empty or not
-			if (current_queue->size > 0){
-					//Check if it has run out of slots or not
-					if (current_queue->time_slot == queue_max_slot ) continue;
-					else{
-						//Get the process from the queue
-						pthread_mutex_lock(&queue_lock);
-						proc = dequeue(current_queue);
-						current_queue->time_slot++;
-						pthread_mutex_unlock(&queue_lock);
-						return proc;
-					}
+		//Check if the current priority queue is empty or not
+		current_queue = &mlq_ready_queue[queue_index];
+		if (current_queue->size >0 ){
+			//Check if it still has slots or not
+			queue_max_slot = MAX_QUEUE_SIZE - queue_index;
+			if (current_queue->time_slot >= queue_max_slot){
+				queue_index++;
 			}
-			else continue;
+			else{
+					//Get the process from the queue
+					pthread_mutex_lock(&queue_lock);
+					proc = dequeue(current_queue);
+					current_queue->time_slot++;
+					pthread_mutex_unlock(&queue_lock);
+					return proc;
+			}
+		}
+		else {
+			queue_index++;
 		}
 		//All the queue are run out of slots and still not empty -> reset
-		if (!queue_empty()) reset_queue();
+		if (queue_index >= MAX_QUEUE_SIZE-1){
+			queue_index = 0;
+			reset_queue();
+		}
 	}
 
 
