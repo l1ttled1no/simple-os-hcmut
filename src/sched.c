@@ -29,17 +29,13 @@ void init_scheduler(void) {
 
 	for (i = 0; i < MAX_PRIO; i ++)
 		mlq_ready_queue[i].size = 0;
+		mlq_ready_queue[i].time_slot = 0;
 #endif
 	ready_queue.size = 0;
 	run_queue.size = 0;
 	pthread_mutex_init(&queue_lock, NULL);
 }
 
-void reset_queue(){
-	for (int i = 0; i < MAX_PRIO; i++){
-		mlq_ready_queue[i]->time_slot = 0;
-	}
-}
 
 #ifdef MLQ_SCHED
 /* 
@@ -48,6 +44,12 @@ void reset_queue(){
  *  We implement stateful here using transition technique
  *  State representation   prio = 0 .. MAX_PRIO, curr_slot = 0..(MAX_PRIO - prio)
  */
+void reset_queue(){
+	for (int i = 0; i < MAX_PRIO; i++){
+		mlq_ready_queue[i].time_slot = 0;
+	}
+}
+
 struct pcb_t * get_mlq_proc(void) {
 	struct pcb_t * proc = NULL;
 	/*TODO: get a process from PRIORITY [ready_queue].
