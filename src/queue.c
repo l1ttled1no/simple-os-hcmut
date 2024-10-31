@@ -14,9 +14,9 @@ void printQueue(struct queue_t *q);
 void enqueue(struct queue_t *q, struct pcb_t *proc)
 {
     /* TODO: put a new process to queue [q] */
-    if (q->size < MAX_QUEUE_SIZE)
+    if (q->size < MAX_QUEUE_SIZE -1)
     {
-        q->proc[q->size - 1] = proc;
+        q->proc[q->size] = proc;
         q->size++;
     }
 }

@@ -20,6 +20,7 @@ int queue_empty(void)
 	for (prio = 0; prio < MAX_PRIO; prio++)
 		if (!empty(&mlq_ready_queue[prio]))
 			return -1;
+	return 1;
 #endif
 	return (empty(&ready_queue) && empty(&run_queue));
 }
@@ -68,20 +69,23 @@ struct pcb_t *get_mlq_proc(void)
 	// Compute the slots of this queue
 	// If a queue is run out if slot -> go to next queue
 	// If all queue run out of slots -> reset
-	if (queue_empty())
-		return NULL;
-	struct queue_t *current_queue;
+	if (queue_empty() == 1)
+		return proc;
+	//printf("Come here");
 	int queue_index = 0;
 	int queue_max_slot;
+
 
 	while (1)
 	{
 		// Loop through each priority queue
 		// Check if the current priority queue is empty or not
-		current_queue = &mlq_ready_queue[queue_index];
+		struct queue_t *current_queue = &mlq_ready_queue[queue_index];
+
 		if (current_queue->size > 0)
 		{
 			// Check if it still has slots or not
+			
 			queue_max_slot = MAX_QUEUE_SIZE - queue_index;
 			if (current_queue->current_time >= queue_max_slot)
 			{
@@ -92,6 +96,7 @@ struct pcb_t *get_mlq_proc(void)
 				// Get the process from the queue
 				pthread_mutex_lock(&queue_lock);
 				proc = dequeue(current_queue);
+				//printf("%d ", proc->pid);
 				current_queue->current_time++;
 				pthread_mutex_unlock(&queue_lock);
 				return proc;
@@ -115,6 +120,11 @@ struct pcb_t *get_mlq_proc(void)
 void put_mlq_proc(struct pcb_t *proc)
 {
 	pthread_mutex_lock(&queue_lock);
+	//Check condition of proc prio
+	if (proc->prio < 0 || proc->prio >= MAX_PRIO){
+		pthread_mutex_unlock(&queue_lock);
+		return;
+	}
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
 }
@@ -122,6 +132,10 @@ void put_mlq_proc(struct pcb_t *proc)
 void add_mlq_proc(struct pcb_t *proc)
 {
 	pthread_mutex_lock(&queue_lock);
+	if (proc->prio < 0 || proc->prio >= MAX_PRIO){
+		pthread_mutex_unlock(&queue_lock);
+		return;
+	}	
 	enqueue(&mlq_ready_queue[proc->prio], proc);
 	pthread_mutex_unlock(&queue_lock);
 }
@@ -138,17 +152,10 @@ void put_proc(struct pcb_t *proc)
 
 void add_proc(struct pcb_t *proc)
 {
-	printQueue(&mlq_ready_queue[proc->prio]);
+	//printQueue(&mlq_ready_queue[0]);
 	return add_mlq_proc(proc);
 }
 
-void printQueue(struct queue_t *q)
-{
-	for (int i = 0; i < q->size; i++)
-	{
-		printf("%d ", q->proc[i]->pid);
-	}
-}
 
 #else
 struct pcb_t *get_proc(void)
