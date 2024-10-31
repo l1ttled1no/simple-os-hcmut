@@ -9,61 +9,63 @@ int empty(struct queue_t * q) {
 
 void enqueue(struct queue_t * q, struct pcb_t * proc) {
         /* TODO: put a new process to queue [q] */
-#ifdef MLQ_SCHED
-        if (q->size < MAX_QUEUE_SIZE){
-                //Put the process to then end of the queue
-                q->proc[q->size-1] = proc;
-                //Increase the size of the queue
+        if (q->size == MAX_QUEUE_SIZE){
+                q->proc[q->size] = proc;
                 q->size++;
         }
-#else
-        //This queue is sorted
-        if (q->size < MAX_QUEUE_SIZE){
-                //Put the process in the correct position
-                int position = q->size - 1;
-                while (position > 0){
-                        if (q->proc[position]->priority > proc->priorit){
-                                q->proc[position+1] = q->proc[position];
-                        }
-                        position--;
+}
+
+int
+queuePeek (struct queue_t *q)
+{
+    int maxPrio = 9999;
+    int index = -1;
+
+    for (int i = 0; i < q->size; i++)
+        {
+            if (maxPrio > q->proc[i]->priority)
+                {
+                    maxPrio = q->proc[i]->priority;
+                    index = i;
                 }
-                q->proc[position++] = proc;
+        }
+
+    return index;
+}
+
+struct pcb_t *
+dequeue (struct queue_t *q)
+{
+    /* TODO: return a pcb whose priority is the highest
+     * in the queue [q] and remember to remove it from q
+     * */
+#ifdef MLQ_SCHED // Skip the priority and dequeue the first proc if using MLQ
+
+    if (!empty (q))
+        {
+            struct pcb_t *newProc = malloc (sizeof (struct pcb_t));
+            newProc = q->proc[0];
+            for (int i = 0; i < q->size; i++)
+                {
+                    q->proc[i] = q->proc[i + 1];
+                }
+            q->size--;
+            return newProc;
+        }
+
+#else
+    if (!empty (q))
+        {
+            int index = queuePeek (q);
+            struct pcb_t *newProc = malloc (sizeof (struct pcb_t));
+            newProc = q->proc[index];
+            for (int i = index; i < q->size; i++)
+                {
+                    q->proc[i] = q->proc[i + 1];
+                }
+            q->size--;
+            return newProc;
         }
 #endif
+    return NULL;
 }
-
-struct pcb_t * dequeue(struct queue_t * q) {
-        /* TODO: return a pcb whose prioprity is the highest
-         * in the queue [q] and remember to remove it from q
-         * */
-        struct pcb_t * return_pcb;
-#ifdef MLQ_SCHED
-        //Skip the priority part
-        
-        if (empty(q)) return NULL;
-        else{
-                //Get the first pcb_t of the queue
-                return_pcb = q->proc[0];
-                //Shift the entire queue to the left by one element
-                for (int i =0 ; i < q->size; i++){
-                        q->proc[i] = q->proc[i+1];
-                }
-                //Reduce queue size
-                q->size --;
-                return return_pcb;
-        }
-#else
-        if (empty(q)) return NULL;
-        else{
-                return_pcb = q->proc[0]
-                for (int i =0 ; i < q->size; i++){
-                        q->proc[i] = q->proc[i+1];
-                }
-        }
-        q->size--;
-        return return_pcb;
-        
-#endif   
-	return NULL;
-}
-
