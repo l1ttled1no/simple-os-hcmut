@@ -7,16 +7,17 @@ int empty(struct queue_t * q) {
 	return (q->size == 0);
 }
 
+void printQueue(struct queue_t * q);
+
 void enqueue(struct queue_t * q, struct pcb_t * proc) {
         /* TODO: put a new process to queue [q] */
-        if (q->size == MAX_QUEUE_SIZE){
+        if (q->size < MAX_QUEUE_SIZE){
                 q->proc[q->size] = proc;
                 q->size++;
         }
 }
 
-int
-queuePeek (struct queue_t *q)
+int queuePeek (struct queue_t *q)
 {
     int maxPrio = 9999;
     int index = -1;
