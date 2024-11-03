@@ -1,0 +1,32 @@
+In case you're working in ubuntu and github desktop suck
+This tutorial will guide you how to deal with input
+First clone the repository from github
+
+git clone https://github.com/l1ttled1no/simple-os-hcmut.git
+
+Change into the cloned repository
+
+cd simple-os-hcmut
+
+Check the status of your repository
+
+git status
+
+Okay, done with the setup, at the beginning, we should check if there is any update from the remote repository
+
+git pull origin main
+
+If you make some changes and then you want to push 
+
+git status
+git add src/queue.c src/sched.c // Replace with the modified file, this is just an example
+
+Commit your changes:
+
+git commit -m "Updated queue.c and sched.c, added obj/ and os"
+
+Push:
+
+git push origin main
+
+Good luck !!!
