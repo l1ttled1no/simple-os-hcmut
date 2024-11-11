@@ -55,66 +55,35 @@ void reset_queue()
 	}
 }
 
-struct pcb_t *get_mlq_proc(void)
-{
+struct pcb_t *get_mlq_proc(void) {
 	struct pcb_t *proc = NULL;
-	/*TODO: get a process from PRIORITY [ready_queue].
-	 * Remember to use lock to protect the queue.
-	 * */
+	
+	pthread_mutex_lock(&queue_lock);
+	int prio;
 
-	// What to do
-	// Check if the queue is empty or not
-	// Loop through each priority queue
-	// If a queue is empty -> go to next queue
-	// Compute the slots of this queue
-	// If a queue is run out if slot -> go to next queue
-	// If all queue run out of slots -> reset
-	if (queue_empty() == 1)
-		return proc;
-	//printf("Come here");
-	int queue_index = 0;
-	int queue_max_slot;
-
-
-	while (1)
-	{
-		// Loop through each priority queue
-		// Check if the current priority queue is empty or not
-		struct queue_t *current_queue = &mlq_ready_queue[queue_index];
-
-		if (current_queue->size > 0)
-		{
-			// Check if it still has slots or not
-			
-			queue_max_slot = MAX_QUEUE_SIZE - queue_index;
-			if (current_queue->current_time >= queue_max_slot)
-			{
-				queue_index++;
-			}
-			else
-			{
-				// Get the process from the queue
-				pthread_mutex_lock(&queue_lock);
-				proc = dequeue(current_queue);
-				//printf("%d ", proc->pid);
-				current_queue->current_time++;
-				pthread_mutex_unlock(&queue_lock);
-				return proc;
-			}
-		}
-		else
-		{
-			queue_index++;
-		}
-		// All the queue are run out of slots and still not empty -> reset
-		if (queue_index >= MAX_QUEUE_SIZE - 1)
-		{
-			queue_index = 0;
-			reset_queue();
+	for (prio = 0; prio < MAX_PRIO; prio++){
+		if (mlq_ready_queue[prio].size != 0 && mlq_ready_queue[prio].current_time < MAX_PRIO - prio){
+			proc = dequeue(&mlq_ready_queue[prio]);
+			mlq_ready_queue[prio].current_time++;
+			break;
 		}
 	}
 
-	return proc;
+	if (prio == MAX_PRIO) {
+		for (int i = 0; i < MAX_PRIO; i++){
+			mlq_ready_queue[i].current_time = 0;
+		}
+
+		for (int i = 0; i < MAX_PRIO; i++){
+			if (mlq_ready_queue[i].size != 0 && mlq_ready_queue[i].current_time < MAX_PRIO - i){
+				proc = dequeue(&mlq_ready_queue[i]);
+				mlq_ready_queue[i].current_time++;
+			break;
+			}
+		}
+	}
+	pthread_mutex_unlock(&queue_lock);
+	return proc;	
 }
 
 void put_mlq_proc(struct pcb_t *proc)
