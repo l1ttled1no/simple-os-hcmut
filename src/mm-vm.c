@@ -1,4 +1,4 @@
-#ifdef MM_PAGING
+
 /*
  * PAGING based Memory Management
  * Virtual memory module mm/mm-vm.c
@@ -8,6 +8,8 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#ifdef MM_PAGING
 
 /*enlist_vm_freerg_list - add new rg to freerg_list
  *@mm: memory region

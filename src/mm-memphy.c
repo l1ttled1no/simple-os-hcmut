@@ -1,4 +1,3 @@
-#ifdef MM_PAGING
 /*
  * PAGING based Memory Management
  * Memory physical module mm/mm-memphy.c
@@ -7,6 +6,7 @@
 #include "mm.h"
 #include <stdlib.h>
 
+#ifdef MM_PAGING
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
  *  @mp: memphy struct

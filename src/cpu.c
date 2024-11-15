@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include "cpu.h"
 #include "mem.h"
 #include "mm.h"
@@ -59,16 +59,19 @@ int run(struct pcb_t * proc) {
 		stat = calc(proc);
 		break;
 	case ALLOC:
+
+	printf("Proc %d: alloc %d %d\n",proc->pid,ins.arg_0, ins.arg_1);
 #ifdef MM_PAGING
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
-
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
+		print_pgtbl(proc, 0, -1);
 		break;
 #ifdef MM_PAGING
 	case MALLOC:
 		stat = pgmalloc(proc, ins.arg_0, ins.arg_1);
+
 		break;
 #endif
 	case FREE:

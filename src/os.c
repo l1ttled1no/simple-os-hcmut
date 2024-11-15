@@ -112,6 +112,7 @@ static void *cpu_routine(void *args)
 		run(proc);
 		time_left--;
 		next_slot(timer_id);
+
 	}
 	detach_event(timer_id);
 	pthread_exit(NULL);
@@ -172,6 +173,9 @@ static void read_config(const char *path)
 		exit(1);
 	}
 	fscanf(file, "%d %d %d\n", &time_slot, &num_cpus, &num_processes);
+	// printf("Time Slot: %d\n", time_slot);
+	// printf("Number of CPUs: %d\n", num_cpus);
+	// printf("Number of Processes: %d\n", num_processes);
 	ld_processes.path = (char **)malloc(sizeof(char *) * num_processes);
 	ld_processes.start_time = (unsigned long *)
 		malloc(sizeof(unsigned long) * num_processes);
@@ -196,8 +200,16 @@ static void read_config(const char *path)
 	 *        MEM_RAM_SZ MEM_SWP0_SZ MEM_SWP1_SZ MEM_SWP2_SZ MEM_SWP3_SZ
 	 */
 	fscanf(file, "%d\n", &memramsz);
+	printf("Memory RAM Size: %d\n", memramsz);
 	for (sit = 0; sit < PAGING_MAX_MMSWP; sit++)
 		fscanf(file, "%d", &(memswpsz[sit]));
+	for (sit = 0; sit < PAGING_MAX_MMSWP; sit++) {
+    printf("%d", memswpsz[sit]);
+    if (sit < PAGING_MAX_MMSWP - 1) {
+        printf(", "); // Add a comma and space between elements, except after the last element
+    	}
+	}
+	printf("\n");
 #ifdef MM_PAGIMG_HEAP_GODOWN
 	fscanf(file, "%d\n", &vmemsz);
 #endif

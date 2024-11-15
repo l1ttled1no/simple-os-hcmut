@@ -1,4 +1,4 @@
-#ifdef MM_PAGING
+
 /*
  * PAGING based Memory Management
  * Memory management unit mm/mm.c
@@ -7,6 +7,8 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#ifdef MM_PAGING
 
 /* 
  * init_pte - Initialize PTE entry
@@ -212,11 +214,13 @@ int __swap_cp_page(struct memphy_struct *mpsrc, int srcfpn,
  * @mm:     self mm
  * @caller: mm owner
  */
+
 int init_mm(struct mm_struct *mm, struct pcb_t *caller)
 {
+  if (mm ==NULL) printf("Sth");
   struct vm_area_struct * vma0 = malloc(sizeof(struct vm_area_struct));
   struct vm_area_struct * vma1 = malloc(sizeof(struct vm_area_struct));
-
+  
   mm->pgd = malloc(PAGING_MAX_PGN*sizeof(uint32_t));
 
   /* By default the owner comes with at least one vma for DATA */
@@ -228,7 +232,7 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   enlist_vm_rg_node(&vma0->vm_freerg_list, first_rg);
 
   /* TODO update VMA0 next */
-  // vma0->next = ...
+  vma0->vm_next = NULL;
 
   /* TODO: update one vma for HEAP */
   // vma1->vm_id = ...
@@ -244,10 +248,15 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   vma1->vm_mm = mm;
 
   /* TODO: update mmap */
-  //mm->mmap = ...
-
+  
+  mm->mmap = vma0;
+  if (mm->mmap == NULL) printf("NUKE");
+  
   return 0;
 }
+
+
+
 
 struct vm_rg_struct* init_vm_rg(int rg_start, int rg_end, int vmaid)
 {
