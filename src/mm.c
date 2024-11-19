@@ -1,4 +1,4 @@
-//#ifdef MM_PAGING
+//
 /*
  * PAGING based Memory Management
  * Memory management unit mm/mm.c
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef MM_PAGING
 /* 
  * init_pte - Initialize PTE entry
  */
@@ -259,24 +260,24 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   enlist_vm_rg_node(&vma0->vm_freerg_list, first_rg);
 
   /* TODO update VMA0 next */
-  vma0->vm_next = vma1;
+  
 
   /* TODO: update one vma for HEAP */
-  vma1->vm_id = 0;
-  vma1->vm_start = caller->vmemsz;
-  vma1->vm_end = vma1->vm_start;
-  vma1->sbrk = vma1->vm_start;
-  struct vm_rg_struct *first_rg = init_vm_rg(vma1->vm_start, vma0->vm_end, 1);
-  vma1->vm_next = NULL;
-  enlist_vm_rg_node(&vma1->vm_freerg_list,first_rg);
+  // vma1->vm_id = 0;
+  // vma1->vm_start = caller->vmemsz;
+  // vma1->vm_end = vma1->vm_start;
+  // vma1->sbrk = vma1->vm_start;
+  // struct vm_rg_struct *second_rg = init_vm_rg(vma1->vm_start, vma0->vm_end, 1);
+  // vma1->vm_next = NULL;
+  // enlist_vm_rg_node(&vma1->vm_freerg_list,second_rg);
 
   /* Point vma owner backward */
   vma0->vm_mm = mm; 
-  vma1->vm_mm = mm;
+  //vma1->vm_mm = mm;
 
   /* TODO: update mmap */
   mm->mmap = vma0;
-
+  //vma0->vm_next = vma1;
   return 0;
 }
 
@@ -399,4 +400,4 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   return 0;
 }
 
-//#endif
+#endif

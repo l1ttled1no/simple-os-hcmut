@@ -210,7 +210,7 @@ static void read_config(const char *path)
     	}
 	}
 	printf("\n");
-#ifdef MM_PAGIMG_HEAP_GODOWN
+#ifdef MM_PAGING_HEAP_GODOWN
 	fscanf(file, "%d\n", &vmemsz);
 #endif
 

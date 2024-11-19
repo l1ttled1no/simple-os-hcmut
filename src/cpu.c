@@ -56,11 +56,12 @@ int run(struct pcb_t * proc) {
 	int stat = 1;
 	switch (ins.opcode) {
 	case CALC:
+		printf("Calc \n");
 		stat = calc(proc);
 		break;
 	case ALLOC:
 
-	printf("Proc %d: alloc %d %d\n",proc->pid,ins.arg_0, ins.arg_1);
+		printf("Proc %d: alloc %d %d\n",proc->pid,ins.arg_0, ins.arg_1);
 #ifdef MM_PAGING
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
 #else
@@ -76,6 +77,7 @@ int run(struct pcb_t * proc) {
 #endif
 	case FREE:
 #ifdef MM_PAGING
+		printf("Free %d: %d\n",proc->pid,ins.arg_0);
 		stat = pgfree_data(proc, ins.arg_0);
 #else
 		stat = free_data(proc, ins.arg_0);
@@ -83,6 +85,7 @@ int run(struct pcb_t * proc) {
 		break;
 	case READ:
 #ifdef MM_PAGING
+		printf("Read %d: %d %d %d\n",proc->pid,ins.arg_0, ins.arg_1,ins.arg_2);
 		stat = pgread(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #else
 		stat = read(proc, ins.arg_0, ins.arg_1, ins.arg_2);
@@ -90,6 +93,7 @@ int run(struct pcb_t * proc) {
 		break;
 	case WRITE:
 #ifdef MM_PAGING
+		printf("Write %d: %d %d %d\n",proc->pid,ins.arg_0, ins.arg_1,ins.arg_2);
 		stat = pgwrite(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #else
 		stat = write(proc, ins.arg_0, ins.arg_1, ins.arg_2);
