@@ -85,8 +85,9 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   struct vm_rg_struct rgnode;
 
   /* TODO: commit the vmaid */
-  // rgnode.vmaid
-
+  rgnode.vmaid = vmaid;
+  // vmaid = 0 means normal 
+  // vmaid = 1 means heap
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
     caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
@@ -116,15 +117,18 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
   if (cur_vma->sbrk + size > cur_vma->vm_end){
+    // Imagine at the begining, the cur_vma vm_start, vm_end, sbrk are equal to 0
+    // Then a process come in, it must increase its size by raising the vm_end
+    // So, the first process requires 300 space, then vm_end increase to 512 (2 pages)
+    // And the sbrk is 300
     inc_vma_limit(caller, vmaid, inc_sz, &inc_limit_ret);
   }
   caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
   caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
-
   caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
-
   *alloc_addr = rgnode.rg_start;
   cur_vma->sbrk += size;
+
 
   /* TODO: commit the limit increment */
 
@@ -144,22 +148,37 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
  */
 int __free(struct pcb_t *caller, int rgid)
 {
-  struct vm_rg_struct rgnode;
+  //struct vm_rg_struct rgnode;
 
   // Dummy initialization for avoding compiler dummay warning
   // in incompleted TODO code rgnode will overwrite through implementing
   // the manipulation of rgid later
-  rgnode.vmaid = 0;  //dummy initialization
-  rgnode.vmaid = 1;  //dummy initialization
+  // rgnode.vmaid = 0;  //dummy initialization
+  // rgnode.vmaid = 1;  //dummy initialization
 
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
 
+  struct vm_area_struct * cur_vma = get_vma_by_num(caller->mm, 0);
+  struct vm_rg_struct * cur_rg = get_symrg_byid(caller->mm, rgid);
   /* TODO: Manage the collect freed region to freerg_list */
-  
+  // Free the allocated memory region which address hold by reg
+  /* Create a new vm_rg_struct for the freed region */
+  struct vm_rg_struct free_rg;
+  free_rg.rg_start = cur_rg->rg_start;
+  free_rg.rg_end = cur_rg->rg_end;
+  free_rg.rg_next = NULL;  // This will be set by enlist_vm_freerg_list
 
+  // Reset the region id 
+  caller->mm->symrgtbl[rgid].rg_start = -1;
+  caller->mm->symrgtbl[rgid].rg_end = -1;
   /*enlist the obsoleted memory region */
-  enlist_vm_freerg_list(caller->mm, rgnode);
+  if (enlist_vm_freerg_list(caller->mm, free_rg)!= 0){
+    printf("Error in free memory region %d \n", rgid);
+    return -1;  // Failed to enlist the freed region
+  };
+
+
 
   return 0;
 }
@@ -335,7 +354,7 @@ int pgread(
 #ifdef PAGETBL_DUMP
   print_pgtbl(proc, 0, -1); //print max TBL
 #endif
-  MEMPHY_dump(proc->mram);
+  //MEMPHY_dump(proc->mram);
 #endif
 
   return val;
@@ -376,7 +395,7 @@ int pgwrite(
 #ifdef PAGETBL_DUMP
   print_pgtbl(proc, 0, -1); //print max TBL
 #endif
-  MEMPHY_dump(proc->mram);
+  //MEMPHY_dump(proc->mram);
 #endif
 
   return __write(proc, destination, offset, data);
@@ -483,7 +502,7 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz, int* inc_limit_re
   //cur_vma->vm_end... 
   // inc_limit_ret...
   //cur_vma->vm_end = cur_vma->vm_end + inc_sz;
-  inc_limit_ret = cur_vma->vm_end;
+  //inc_limit_ret = cur_vma->vm_end;
 
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
                     old_end, incnumpage , newrg) < 0)

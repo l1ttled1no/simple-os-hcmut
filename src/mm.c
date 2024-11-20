@@ -260,7 +260,7 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   enlist_vm_rg_node(&vma0->vm_freerg_list, first_rg);
 
   /* TODO update VMA0 next */
-  
+  vma0->vm_next = NULL;
 
   /* TODO: update one vma for HEAP */
   // vma1->vm_id = 0;
