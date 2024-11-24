@@ -1,11 +1,9 @@
 #ifndef OSMM_H
 #define OSMM_H
 
-//#define MM_PAGING
+#define MM_PAGING
 #define PAGING_MAX_MMSWP 4 /* max number of supported swapped space */
 #define PAGING_MAX_SYMTBL_SZ 30
-#include <stdbool.h>
-#include <bits/pthreadtypes.h>
 
 typedef char BYTE;
 typedef uint32_t addr_t;
@@ -84,8 +82,6 @@ struct memphy_struct {
    /* Management structure */
    struct framephy_struct *free_fp_list;
    struct framephy_struct *used_fp_list;
-
-   pthread_mutex_t lock_memphy;
 };
 
 #endif
