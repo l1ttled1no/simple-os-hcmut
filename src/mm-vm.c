@@ -241,29 +241,30 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
     /* TODO: Play with your paging theory here */
     /* Find victim page */
-    find_victim_page(caller->mm, &vicpgn);
+    find_victim_page(caller->mm, &vicpgn); //TÌM TRANG TRONG RAM SẼ BỊ THẾ
+    int vicfpn = PAGING_FPN(caller->mm->pgd[vicpgn]); //FRAME NUMBER CỦA TRANG SẼ BỊ THẾ
 
     /* Get free frame in MEMSWP */
-    MEMPHY_get_freefp(caller->active_mswp, &swpfpn);
-
+    MEMPHY_get_freefp(caller->active_mswp, &swpfpn); //KIẾM FREE FRAME TRONG SECONDARY STORAGE (SWAP)
 
     /* Do swap frame from MEMRAM to MEMSWP and vice versa*/
     /* Copy victim frame to swap */
-    //__swap_cp_page();
+    __swap_cp_page(caller->mram, vicfpn, caller->active_mswp, swpfpn); //COPY CONTENT TRONG VICTIM FRAME VÀO FREE FRAME TRONG SWAP VỪA MỚI KIẾM
     /* Copy target frame from swap to mem */
-    //__swap_cp_page();
+    __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, vicfpn); //COPY CONTENT CỦA FRAME TGTFPN VÀO KHUNG VICTIM FRAME
 
     /* Update page table */
-    //pte_set_swap() &mm->pgd;
+    pte_set_swap_fpn(&caller->mm->pgd[vicpgn], swpfpn); //SET TRẠNG THÁI KHUNG SWPFPN THÀNH ĐÃ CÓ TRONG RAM
 
     /* Update its online status of the target page */
-    //pte_set_fpn() & mm->pgd[pgn];
-    pte_set_fpn(&pte, tgtfpn);
+    pte_set_fpn(&caller->mm->pgd[pgn], vicfpn); //SET TRẠNG THÁI KHUNG VICFPN THÀNH ĐANG Ở SECONDARY STORAGE
+    //pte_set_fpn(&pte, tgtfpn);
 
-    enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
+    MEMPHY_put_freefp(caller->active_mswp, tgtfpn);
+    enlist_pgn_node(&caller->mm->fifo_pgn,pgn); 
   }
 
-  *fpn = PAGING_PTE_FPN(pte);
+  *fpn = PAGING_PTE_FPN(pte); //LẤY ID KHUNG CỦA TRANG PGN
 
   return 0;
 }
@@ -522,7 +523,19 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   struct pgn_t *pg = mm->fifo_pgn;
 
   /* TODO: Implement the theorical mechanism to find the victim page */
-
+  //USING FIFO, CAN BE FURTHER UPGRADE WITH LRU ALGORITHM
+  if (pg == NULL){
+    *retpgn = -1;
+    free(pg);
+    return -1;
+  }
+  struct pgn_t * track = pg;
+  pg = pg->pg_next;
+  while(pg->pg_next!=NULL){
+    pg = pg->pg_next;
+  }
+  *retpgn = pg->pgn;
+  track->pg_next = NULL;
   free(pg);
 
   return 0;
