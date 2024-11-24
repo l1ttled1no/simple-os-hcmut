@@ -75,6 +75,15 @@ int pte_set_fpn(uint32_t *pte, int fpn)
 
   return 0;
 }
+int pte_set_swap_fpn(uint32_t *pte, int fpn)
+{
+  CLRBIT(*pte, PAGING_PTE_PRESENT_MASK);
+  SETBIT(*pte, PAGING_PTE_SWAPPED_MASK);
+
+  SETVAL(*pte, fpn, PAGING_PTE_FPN_MASK, PAGING_PTE_FPN_LOBIT);
+
+  return 0;
+}
 
 
 /* 
