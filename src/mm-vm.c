@@ -88,6 +88,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   rgnode.vmaid = vmaid;
   // vmaid = 0 means normal 
   // vmaid = 1 means heap
+  // alloc 300 0 -> alloc 300 bytes into reg 0
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
     caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
@@ -111,21 +112,34 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   int inc_limit_ret;
 
   /* TODO retrive old_sbrk if needed, current comment out due to compiler redundant warning*/
-  //int old_sbrk = cur_vma->sbrk;
+  int old_sbrk = cur_vma->sbrk;
 
   /* TODO INCREASE THE LIMIT
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
-  if (cur_vma->sbrk + size > cur_vma->vm_end){
+  // Find gap between sbrk and vm_end, if it's large enough, just fit it 
+  int gap = cur_vma->vm_end - old_sbrk;
+  if (gap >= size){
+    // Increase the sbrk
+    cur_vma->sbrk = old_sbrk + size;
+    // Successfully increase the limit
+    caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
+    caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
+
+    printf ("alloc region=%d, size=%d, pid=%d\n", rgid, size,caller->pid);
+    return 0;
+  }
+
+  else{
     // Imagine at the begining, the cur_vma vm_start, vm_end, sbrk are equal to 0
     // Then a process come in, it must increase its size by raising the vm_end
     // So, the first process requires 300 space, then vm_end increase to 512 (2 pages)
     // And the sbrk is 300
     inc_vma_limit(caller, vmaid, inc_sz, &inc_limit_ret);
   }
-  caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
-  caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
-  caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
+  caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
+  caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
+
   *alloc_addr = rgnode.rg_start;
   cur_vma->sbrk += size;
 
