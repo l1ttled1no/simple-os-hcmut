@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug OS",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/os",
+        "args": ["os_0_mlq_paging"], // <-- Add the config file path here
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],
+        "externalConsole": true,
+        "MIMode": "gdb",
+        "miDebuggerPath": "/usr/bin/gdb", // Or your debugger's path
+        "setupCommands": [
+          // ... (your setup commands)
+        ]
+      }
+    ]
+  }

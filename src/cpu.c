@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include "cpu.h"
 #include "mem.h"
 #include "mm.h"
@@ -56,23 +56,28 @@ int run(struct pcb_t * proc) {
 	int stat = 1;
 	switch (ins.opcode) {
 	case CALC:
+		printf("Calc \n");
 		stat = calc(proc);
 		break;
 	case ALLOC:
+
+		printf("Proc %d: alloc %d %d\n",proc->pid,ins.arg_0, ins.arg_1);
 #ifdef MM_PAGING
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
-
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
+		print_pgtbl(proc, 0, -1);
 		break;
 #ifdef MM_PAGING
 	case MALLOC:
 		stat = pgmalloc(proc, ins.arg_0, ins.arg_1);
+
 		break;
 #endif
 	case FREE:
 #ifdef MM_PAGING
+		printf("Free %d: %d\n",proc->pid,ins.arg_0);
 		stat = pgfree_data(proc, ins.arg_0);
 #else
 		stat = free_data(proc, ins.arg_0);
@@ -80,6 +85,7 @@ int run(struct pcb_t * proc) {
 		break;
 	case READ:
 #ifdef MM_PAGING
+		printf("Read %d: %d %d %d\n",proc->pid,ins.arg_0, ins.arg_1,ins.arg_2);
 		stat = pgread(proc, ins.arg_0, ins.arg_1, ins.arg_2);
 #else
 		stat = read(proc, ins.arg_0, ins.arg_1, ins.arg_2);

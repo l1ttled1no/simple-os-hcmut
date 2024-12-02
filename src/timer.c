@@ -64,7 +64,6 @@ void next_slot(struct timer_id_t * timer_id) {
 	timer_id->done = 1;
 	pthread_cond_signal(&timer_id->event_cond);
 	pthread_mutex_unlock(&timer_id->event_lock);
-
 	/* Wait for going to next slot */
 	pthread_mutex_lock(&timer_id->timer_lock);
 	while (timer_id->done) {
@@ -74,6 +73,7 @@ void next_slot(struct timer_id_t * timer_id) {
 		);
 	}
 	pthread_mutex_unlock(&timer_id->timer_lock);
+	
 }
 
 uint64_t current_time() {
