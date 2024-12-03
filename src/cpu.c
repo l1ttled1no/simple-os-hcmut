@@ -72,7 +72,7 @@ int run(struct pcb_t * proc) {
 #ifdef MM_PAGING
 	case MALLOC:
 		stat = pgmalloc(proc, ins.arg_0, ins.arg_1);
-
+		print_pgtbl(proc, 0, -1);
 		break;
 #endif
 	case FREE:

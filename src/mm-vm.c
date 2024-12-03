@@ -16,18 +16,18 @@
  *@rg_elmt: new region
  *
  */
-int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
+int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
-  if (rg_elmt.rg_start >= rg_elmt.rg_end)
+  if (rg_elmt->rg_start >= rg_elmt->rg_end)
     return -1;
 
   if (rg_node != NULL)
-    rg_elmt.rg_next = rg_node;
+    rg_elmt->rg_next = rg_node;
 
   /* Enlist the new region */
-  mm->mmap->vm_freerg_list = &rg_elmt;
+  mm->mmap->vm_freerg_list = rg_elmt;
 
   return 0;
 }
@@ -45,7 +45,6 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
     return NULL;
 
   int vmait = 0;
-  
   while (vmait < vmaid)
   {
     if(pvma == NULL)
@@ -117,31 +116,59 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   /* TODO INCREASE THE LIMIT
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
+  // Divide into 2 parts, one for vmaid = 0 and one for vmaid = 1
+  if (vmaid == 0){
   // Find gap between sbrk and vm_end, if it's large enough, just fit it 
-  int gap = cur_vma->vm_end - old_sbrk;
-  if (gap >= size){
-    // Increase the sbrk
-    cur_vma->sbrk = old_sbrk + size;
-    // Successfully increase the limit
+    int gap = cur_vma->vm_end - old_sbrk;
+    if (gap >= size){
+      // Increase the sbrk
+      cur_vma->sbrk = old_sbrk + size;
+      // Successfully increase the limit
+      caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
+      caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
+      caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
+
+      printf ("alloc region=%d, size=%d, pid=%d\n", rgid, size,caller->pid);
+      return 0;
+    }
+
+    else{
+      // Imagine at the begining, the cur_vma vm_start, vm_end, sbrk are equal to 0
+      // Then a process come in, it must increase its size by raising the vm_end
+      // So, the first process requires 300 space, then vm_end increase to 512 (2 pages)
+      // And the sbrk is 300
+      inc_vma_limit(caller, vmaid, inc_sz, &inc_limit_ret);
+    }
     caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
     caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
-
-    printf ("alloc region=%d, size=%d, pid=%d\n", rgid, size,caller->pid);
-    return 0;
+    caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
+    *alloc_addr = rgnode.rg_start;
+    cur_vma->sbrk += size;
   }
-
-  else{
-    // Imagine at the begining, the cur_vma vm_start, vm_end, sbrk are equal to 0
-    // Then a process come in, it must increase its size by raising the vm_end
-    // So, the first process requires 300 space, then vm_end increase to 512 (2 pages)
-    // And the sbrk is 300
-    inc_vma_limit(caller, vmaid, inc_sz, &inc_limit_ret);
+  // For heap
+  else if (vmaid == 1){
+    // We also find the gap between sbrk and vm_end, however this time it's a little bit different
+    int gap = old_sbrk - cur_vma->vm_end;
+    if (gap >= size){
+      // Increase the sbrk
+      cur_vma->sbrk = old_sbrk - size;
+      // Successfully increase the limit
+      caller->mm->symrgtbl[rgid].rg_start = old_sbrk - size;
+      caller->mm->symrgtbl[rgid].rg_end = old_sbrk;
+      caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
+      printf ("malloc region=%d, size=%d, pid=%d\n", rgid, size,caller->pid);
+      return 0;
+    }
+    // Not enough space, has to increase
+    else{
+      inc_vma_limit(caller, vmaid, inc_sz, &inc_limit_ret);
+    }
+    caller->mm->symrgtbl[rgid].rg_start = old_sbrk - size;
+    caller->mm->symrgtbl[rgid].rg_end = old_sbrk;
+    caller->mm->symrgtbl[rgid].vmaid = rgnode.vmaid;
+    *alloc_addr = rgnode.rg_start;
+    cur_vma->sbrk -= size;
   }
-  caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
-  caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
-
-  *alloc_addr = rgnode.rg_start;
-  cur_vma->sbrk += size;
 
 
   /* TODO: commit the limit increment */
@@ -173,15 +200,17 @@ int __free(struct pcb_t *caller, int rgid)
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
 
-  struct vm_area_struct * cur_vma = get_vma_by_num(caller->mm, 0);
   struct vm_rg_struct * cur_rg = get_symrg_byid(caller->mm, rgid);
+  struct vm_area_struct * cur_vma = get_vma_by_num(caller->mm, cur_rg->vmaid);
+  
   /* TODO: Manage the collect freed region to freerg_list */
   // Free the allocated memory region which address hold by reg
   /* Create a new vm_rg_struct for the freed region */
-  struct vm_rg_struct free_rg;
-  free_rg.rg_start = cur_rg->rg_start;
-  free_rg.rg_end = cur_rg->rg_end;
-  free_rg.rg_next = NULL;  // This will be set by enlist_vm_freerg_list
+  struct vm_rg_struct *free_rg = (struct vm_rg_struct *)malloc(sizeof(struct vm_rg_struct));
+  free_rg->rg_start = cur_rg->rg_start;
+  free_rg->rg_end = cur_rg->rg_end;
+  free_rg->vmaid = cur_rg->vmaid;
+  free_rg->rg_next = NULL;  // This will be set by enlist_vm_freerg_list
 
   // Reset the region id 
   caller->mm->symrgtbl[rgid].rg_start = -1;
@@ -516,8 +545,15 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz, int* inc_limit_re
   /* TODO: Obtain the new vm area based on vmaid */
   //cur_vma->vm_end... 
   // inc_limit_ret...
-  //cur_vma->vm_end = cur_vma->vm_end + inc_sz;
-  //inc_limit_ret = cur_vma->vm_end;
+  if (vmaid == 0){
+    cur_vma->vm_end = cur_vma->vm_end + inc_sz;
+    inc_limit_ret = cur_vma->vm_end;
+  }
+  else if (vmaid == 1){
+    cur_vma->vm_end = cur_vma->vm_end - inc_sz;
+    inc_limit_ret = cur_vma->vm_end;
+  }
+
 
   if (vm_map_ram(caller, area->rg_start, area->rg_end, 
                     old_end, incnumpage , newrg) < 0)
@@ -585,6 +621,7 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
       if (rgit->rg_start + size < rgit->rg_end)
       {
         rgit->rg_start = rgit->rg_start + size;
+        return 0;
       }
       else
       { /*Use up all space, remove current node */

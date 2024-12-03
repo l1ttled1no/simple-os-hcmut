@@ -140,7 +140,7 @@ int vmap_page_range(struct pcb_t *caller,  // Process call
     }
 
     // Update the process's virtual memory area (vm_end) in the memory map
-    caller->mm->mmap->vm_end += pgnum * PAGING_PAGESZ;
+    // caller->mm->mmap->vm_end += pgnum * PAGING_PAGESZ;
 
     // Free the temporary frame iterator memory
     free(frame_iter);
@@ -272,21 +272,22 @@ int init_mm(struct mm_struct *mm, struct pcb_t *caller)
   vma0->vm_next = NULL;
 
   /* TODO: update one vma for HEAP */
-  // vma1->vm_id = 0;
-  // vma1->vm_start = caller->vmemsz;
-  // vma1->vm_end = vma1->vm_start;
-  // vma1->sbrk = vma1->vm_start;
-  // struct vm_rg_struct *second_rg = init_vm_rg(vma1->vm_start, vma0->vm_end, 1);
-  // vma1->vm_next = NULL;
-  // enlist_vm_rg_node(&vma1->vm_freerg_list,second_rg);
+  vma1->vm_id = 0;
+  vma1->vm_start = caller->vmemsz;
+  vma1->vm_end = vma1->vm_start;
+  vma1->sbrk = vma1->vm_start;
+  struct vm_rg_struct *second_rg = init_vm_rg(vma1->vm_start, vma0->vm_end, 1);
+  vma1->vm_next = NULL;
+  enlist_vm_rg_node(&vma1->vm_freerg_list,second_rg);
 
   /* Point vma owner backward */
   vma0->vm_mm = mm; 
-  //vma1->vm_mm = mm;
+  vma1->vm_mm = mm;
 
   /* TODO: update mmap */
   mm->mmap = vma0;
-  //vma0->vm_next = vma1;
+  //mm->mmap_heap = vma1;
+  vma0->vm_next = vma1;
   return 0;
 }
 
