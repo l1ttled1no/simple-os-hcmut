@@ -4,6 +4,9 @@
 #define MM_PAGING
 #define PAGING_MAX_MMSWP 4 /* max number of supported swapped space */
 #define PAGING_MAX_SYMTBL_SZ 30
+#include <stdbool.h>
+#include <bits/pthreadtypes.h>
+#include <stdint.h>
 
 typedef char BYTE;
 typedef uint32_t addr_t;
@@ -51,6 +54,7 @@ struct mm_struct {
    uint32_t *pgd;
 
    struct vm_area_struct *mmap;
+   //struct vm_area_struct *mmap_heap;
 
    /* Currently we support a fixed number of symbol */
    struct vm_rg_struct symrgtbl[PAGING_MAX_SYMTBL_SZ];
@@ -82,6 +86,8 @@ struct memphy_struct {
    /* Management structure */
    struct framephy_struct *free_fp_list;
    struct framephy_struct *used_fp_list;
+
+   pthread_mutex_t lock_memphy;
 };
 
 #endif
