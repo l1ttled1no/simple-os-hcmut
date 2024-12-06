@@ -411,8 +411,8 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
     
     struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 1);
     start = caller->vmemsz;
-    end = 0;
-    printf("%d",start); //WHY PRINT 0? 
+    end = cur_vma->vm_end;
+    // printf("%d",start); //WHY PRINT 0? 
   }
   pgn_start = PAGING_PGN(start);
   pgn_end = PAGING_PGN(end);
