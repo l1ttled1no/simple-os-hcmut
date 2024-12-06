@@ -388,6 +388,7 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
 {
   int pgn_start,pgn_end;
   int pgit;
+  int cur_end = end;
 
   if(end == -1){
     pgn_start = 0;
@@ -397,14 +398,32 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   pgn_start = PAGING_PGN(start);
   pgn_end = PAGING_PGN(end);
 
-  printf("print_pgtbl: %d - %d", start, end);
+  printf("print_pgtbl (alloc): %d - %d", start, end);
   if (caller == NULL) {printf("NULL caller\n"); return -1;}
     printf("\n");
-
 
   for(pgit = pgn_start; pgit < pgn_end; pgit++)
   {
      printf("%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
+  }
+/*-------------------------------------------------------------------------------*/
+  if(cur_end == -1){
+    
+    struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, 1);
+    start = caller->vmemsz;
+    end = 0;
+    printf("%d",start); //WHY PRINT 0? 
+  }
+  pgn_start = PAGING_PGN(start);
+  pgn_end = PAGING_PGN(end);
+
+  printf("print_pgtbl (malloc): %d - %d",start, end);
+  if (caller == NULL) {printf("NULL caller\n"); return -1;}
+    printf("\n");
+
+  for(pgit = pgn_start; pgit >= pgn_end; pgit--)
+  {
+    if(caller->mm->pgd[pgit] !=0) printf("%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
   }
 
   return 0;
