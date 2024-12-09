@@ -96,35 +96,35 @@ int vmap_page_range(struct pcb_t *caller,  // Process call
                     struct framephy_struct *frames, // List of mapped frames
                     struct vm_rg_struct *ret_rg)    // Return the mapped region
 {
-    struct framephy_struct *frame_iter = malloc(sizeof(struct framephy_struct));
+    struct framephy_struct *fpit = malloc(sizeof(struct framephy_struct));
 
-    int page_index = 0;
-    int page_number = PAGING_PGN(addr);  // Get the page number for the start address
+    int pgit = 0;
+    int pgn = PAGING_PGN(addr);  // Get the page number for the start address
 
     // Initialize the return region with the start address
-    ret_rg->rg_start = ret_rg->rg_end = addr;
+    ret_rg->rg_start = addr;
+    ret_rg->rg_end = addr;
 
     // Set the frame list iterator to point to the first frame
-    frame_iter->fp_next = frames;
+    fpit->fp_next = frames;
 
-    while (frame_iter->fp_next != NULL && page_index < pgnum) {
-        uint32_t *pte = &caller->mm->pgd[page_number];
+    while (fpit->fp_next != NULL && pgit < pgnum) {
+        uint32_t *pte = &caller->mm->pgd[pgn];
 
-        pte_set_fpn(pte, frame_iter->fp_next->fpn);
-        enlist_pgn_node(&caller->mm->fifo_pgn, page_number);
+        pte_set_fpn(pte, fpit->fp_next->fpn);
+        enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
 
-        frame_iter->fp_next = frame_iter->fp_next->fp_next;
+        fpit->fp_next = fpit->fp_next->fp_next;
 
-        // Update the address and the end of the mapped region
         addr += PAGING_PAGESZ;
         ret_rg->rg_end = addr;
 
-        page_number = PAGING_PGN(addr);
-        page_index++;
+        pgn = PAGING_PGN(addr);
+        pgit++;
     }
-    while (page_index < pgnum) {
+    while (pgit < pgnum) {
         int swap_frame;
-        uint32_t *pte = &caller->mm->pgd[page_number];
+        uint32_t *pte = &caller->mm->pgd[pgn];
         // Get a free frame from the swap space
         MEMPHY_get_freefp(caller->active_mswp, &swap_frame);
 
@@ -135,15 +135,10 @@ int vmap_page_range(struct pcb_t *caller,  // Process call
         addr += PAGING_PAGESZ;
         ret_rg->rg_end = addr;
 
-        page_number = PAGING_PGN(addr);
-        page_index++;
+        pgn = PAGING_PGN(addr);
+        pgit++;
     }
-
-    // Update the process's virtual memory area (vm_end) in the memory map
-    // caller->mm->mmap->vm_end += pgnum * PAGING_PAGESZ;
-
-    // Free the temporary frame iterator memory
-    free(frame_iter);
+    free(fpit);
 
     return 0;
 }
@@ -159,22 +154,22 @@ int vmap_page_range(struct pcb_t *caller,  // Process call
 
 int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struct **frm_lst)
 {
-    int page_index, frame_number;
+    int pgit, fpn;
     struct framephy_struct *new_frame_entry;
 
-    for (page_index = 0; page_index < req_pgnum; page_index++) {
-        if (MEMPHY_get_freefp(caller->mram, &frame_number) == 0) {
+    for (pgit = 0; pgit < req_pgnum; pgit++) {
+        if (MEMPHY_get_freefp(caller->mram, &fpn) == 0) {
             new_frame_entry = malloc(sizeof(struct framephy_struct));
 
             // Initialize the new frame structure
-            new_frame_entry->fpn = frame_number;
-            new_frame_entry->owner = caller->mm;  // Set the owner of the frame
-            new_frame_entry->fp_next = *frm_lst;  // Link to the previous frame in the list
+            new_frame_entry->fpn = fpn;
+            new_frame_entry->owner = caller->mm; 
+            new_frame_entry->fp_next = *frm_lst;
 
             // Update the frame list to include the new frame
             *frm_lst = new_frame_entry;
         } else {
-            return 0; 
+            return -1; 
         }
     }
     return 0;
