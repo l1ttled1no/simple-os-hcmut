@@ -110,6 +110,7 @@ static void *cpu_routine(void *args)
 
 		/* Run current process */
 		run(proc);
+		printf("proc_id: %d,proc_pc: %d\n",proc->code->size,proc->pc);
 		time_left--;
 		next_slot(timer_id);
 

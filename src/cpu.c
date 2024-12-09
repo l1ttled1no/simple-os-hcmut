@@ -64,13 +64,15 @@ int run(struct pcb_t * proc) {
 		printf("Proc %d: alloc %d %d\n",proc->pid,ins.arg_0, ins.arg_1);
 #ifdef MM_PAGING
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
+		print_pgtbl(proc, 0, -1);
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
 #endif
-		print_pgtbl(proc, 0, -1);
+		
 		break;
 #ifdef MM_PAGING
 	case MALLOC:
+		printf("Malloc %d %d \n",ins.arg_0, ins.arg_1);
 		stat = pgmalloc(proc, ins.arg_0, ins.arg_1);
 		print_pgtbl(proc, 0, -1);
 		break;
