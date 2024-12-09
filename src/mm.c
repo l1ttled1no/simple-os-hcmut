@@ -104,6 +104,7 @@ int vmap_page_range(struct pcb_t *caller,  // Process call
     // Initialize the return region with the start address
     ret_rg->rg_start = addr;
     ret_rg->rg_end = addr;
+    ret_rg -> vmaid = caller->mm->mmap->vm_id;
 
     // Set the frame list iterator to point to the first frame
     fpit->fp_next = frames;
