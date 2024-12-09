@@ -1,6 +1,8 @@
 {
     "files.associations": {
+        "*.rmd": "markdown",
         "stdlib.h": "c",
-        "queue.h": "c"
+        "queue.h": "c",
+        "sched.h": "c"
     }
 }
