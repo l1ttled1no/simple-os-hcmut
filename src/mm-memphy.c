@@ -98,17 +98,20 @@ int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
  */
 int MEMPHY_write(struct memphy_struct * mp, int addr, BYTE data)
 {
+   //printf("Address: %d, old: %d\n",addr, mp->storage[addr]); //DEBUG
    pthread_mutex_lock(&mp->lock_memphy);
    if (mp == NULL){
       pthread_mutex_unlock(&mp->lock_memphy);
      return -1;
    }
-
+   
    if (mp->rdmflg)
       mp->storage[addr] = data;
    else /* Sequential access device */
       MEMPHY_seq_write(mp, addr, data);
+   
    pthread_mutex_unlock(&mp->lock_memphy);
+   //printf("Address: %d, new: %d\n",addr, mp->storage[addr]); //DEBUG
    return 0;
 }
 
