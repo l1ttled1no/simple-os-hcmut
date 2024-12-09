@@ -583,10 +583,17 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
     free(pg);
     return -1;
   }
+  if(pg->pg_next == NULL){
+    *retpgn = pg->pgn;
+    free(pg);
+    return 0;
+  }
   struct pgn_t * track = pg;
   pg = pg->pg_next;
+
   while(pg->pg_next!=NULL){
     pg = pg->pg_next;
+    track = track -> pg_next;
   }
   *retpgn = pg->pgn;
   track->pg_next = NULL;
@@ -594,6 +601,7 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
 
   return 0;
 }
+
 
 /*get_free_vmrg_area - get a free vm region
  *@caller: caller
